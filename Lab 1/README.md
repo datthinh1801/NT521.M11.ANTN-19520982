@@ -31,3 +31,15 @@ Trong trường hợp ta muốn gán 1 địa chỉ tĩnh cho container, khi sta
 
 ![](https://github.com/datthinh1801/NT521.M11.ANTN-19520982/blob/main/Lab%201/test%20result.png)
 > Cả 2 job đều thành công.
+
+## Câu 6
+### Tạo pipeline job
+![](https://github.com/datthinh1801/NT521.M11.ANTN-19520982/blob/main/Lab%201/pipeline%20config.png)
+
+Giải thích script:  
+- Công đoạn đầu tiên là công đoạn chuẩn bị. Ở công đoạn này, nếu kết quả build trước đó của pipeline thành công (một container `samplerunning` đang chạy), thì ta sẽ stop và xóa container đó.
+- Công đoạn tiếp theo là công đoạn build. Ở công đoạn này, ta thực hiện việc build **BuildAppJob**.
+- Ở công đoạn cuối cùng, công đoạn kết quả, ta chạy **TestAppJob_19520982** để kiểm tra xem công đoạn build có thành công hay không.
+
+### Chạy pipeline
+![](https://github.com/datthinh1801/NT521.M11.ANTN-19520982/blob/main/Lab%201/run%20pipeline.png)
