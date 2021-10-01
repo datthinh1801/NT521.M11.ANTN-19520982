@@ -43,3 +43,21 @@ Giải thích script:
 
 ### Chạy pipeline
 ![](https://github.com/datthinh1801/NT521.M11.ANTN-19520982/blob/main/Lab%201/run%20pipeline.png)
+
+
+## Câu 7
+> Code và kết quả từ anh Khoa :)
+
+![](https://github.com/datthinh1801/NT521.M11.ANTN-19520982/blob/main/Lab%201/global%20var.png)
+
+![](https://github.com/datthinh1801/NT521.M11.ANTN-19520982/blob/main/Lab%201/not%20found%20failed.png)
+
+## Câu 8
+Lí do `test_search_not_found` fail là vì ta đang dùng **global variable** trong `recursive_json_search.py`, đồng thời ta test `test_search_found` trước. Nghĩa là, sau khi `test_search_found` thành công, `ret_val` đang chứa 1 phần tử, nên cho dù các lần gọi hàm sau có không tìm thấy thì `ret_val` vẫn có tí nhất 1 phần tử và list này không rỗng.  
+
+Để sửa lỗi trên thì ta để ý rằng, hàm `json_search` sẽ trả về 1 list chứa các key-pair tìm thấy từ 1 dict cục bộ. Vậy để thu thập được tất cả các key, ta chỉ cần nối (sử dụng method `extend`) các `ret_val` từ các lần gọi đệ quy vào `ret_val` ban đầu là ta đã có thể có tất cả giá trị key-pair mà không phải dùng global variable.
+
+![](https://github.com/datthinh1801/NT521.M11.ANTN-19520982/blob/main/Lab%201/solution%20code.png)
+
+![](https://github.com/datthinh1801/NT521.M11.ANTN-19520982/blob/main/Lab%201/run%20result.png)
+
