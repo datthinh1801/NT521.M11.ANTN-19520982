@@ -1,8 +1,8 @@
 # Automating Everything with Code
 ![](https://previews.123rf.com/images/karpenkoilia/karpenkoilia1805/karpenkoilia180500009/102165920-vector-line-web-concept-for-programming-linear-web-banner-learn-to-code-.jpg)
 
-GVHD: Nghi Hoàng Khoa
-SVTH: Nguyễn Đạt Thịnh - MSSV: 19520982
+**GVHD:** Nghi Hoàng Khoa  
+**SVTH:** Nguyễn Đạt Thịnh - **MSSV:** 19520982
 
 ## Câu 1, 2, 3
 Đã làm tại lớp.
@@ -18,18 +18,43 @@ Trên **docker-cli**, để chỉ ra mapping này, ta dùng option `-v path_of_d
 ![](https://github.com/datthinh1801/NT521.M11.ANTN-19520982/blob/main/Lab%201/Create%20a%20new%20job%20for%20test.png)
 
 ### Bước 2, 3: Cấu hình Jenkins test job.
+
+#### Cách 1: Test qua container network
 ![](https://github.com/datthinh1801/NT521.M11.ANTN-19520982/blob/main/Lab%201/jenkins%20test%20job%20configuration.png)
 
 Trong docker, các container là độc lập với nhau (isolated) do đó để các container có thể giao tiếp với nhau, chúng cần kết nối qua network. Khi 1 container được chạy, mặc định nó sẽ được kết nối vào 1 *virtual bridge network* và được cấp 1 địa chỉ IP. Trong trường hợp này, container `samplerunning` luôn được gán IP là `172.17.0.3` một cách may mắn nên để **TestAppJob** có thể `curl` `samplerunning`, ta cần `curl` địa chỉ `172.17.0.3` tại port `5050` là được.  
 Trong trường hợp ta muốn gán 1 địa chỉ tĩnh cho container, khi start container, ta thêm option `--ip <ip address>` thì container này sẽ được gán địa chỉ IP mà ta mong muốn. Trong bài lab này, vì chỉ có container `jenkins` và `samplerunning` nên ta không cần làm vậy.
 
+#### Cách 2: Test qua docker
+Lệnh để chạy Jenkins container của chúng ta như sau:
+```
+docker run --rm -u root -p 8080:8080 -v jenkins-data:/var/jenkins_home -v $(which docker):/usr/bin/docker -v /var/run/docker.sock:/var/run/docker.sock -v "$HOME":/home --name jenkins_server jenkins/jenkins:lts
+```
+
+Ta để ý thấy ra, ta map `docker` executable file và `docker.sock` file vào Jenkins container, do đó ta có thể thực thi các câu lệnh của docker trên Jenkins.  
+
+Khi ta build **BuildAppJob** thành công, container `samplerunning` sẽ được và ta có thể check được bằng lệnh `docker ps`. Vậy để test xem job build có thành công hay không, ta có thể dùng `docker ps | grep samplerunning` thay cho sử dụng `curl` và `grep h1`.
+
+```
+docker ps | grep samplerunning | awk 'END {if(length($0) == 0) exit 1; exit 0;}'
+```
+
+
+
 ### Bước 4: Yêu cầu Jenkins chạy lại job BuildAppJob
 ![](https://github.com/datthinh1801/NT521.M11.ANTN-19520982/blob/main/Lab%201/build%20BuildAppJob.png)
 
 ### Bước 5: Kiểm tra 2 job
+#### Đối với cách test 1
 ![](https://github.com/datthinh1801/NT521.M11.ANTN-19520982/blob/main/Lab%201/build%20results.png)  
 
 ![](https://github.com/datthinh1801/NT521.M11.ANTN-19520982/blob/main/Lab%201/test%20result.png)
+> Cả 2 job đều thành công.
+
+#### Đối với cách test 2
+![image](https://user-images.githubusercontent.com/44528004/135706697-705468ba-fa23-45d0-8a10-e42c60d9c6d2.png)  
+
+![image](https://user-images.githubusercontent.com/44528004/135706744-da5905a0-4cb1-4269-b291-5f1e60e3e177.png)
 > Cả 2 job đều thành công.
 
 ## Câu 6
