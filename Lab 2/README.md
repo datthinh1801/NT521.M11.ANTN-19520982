@@ -160,6 +160,56 @@ Cuối cùng, xóa `carlos` user.
 > Solved!
 
 ## Câu 9
+### Description
+This lab uses a serialization-based session mechanism and is vulnerable to authentication bypass as a result. To solve the lab, edit the serialized object in the session cookie to access the administrator account. Then, delete Carlos.
+
+You can log in to your own account using the following credentials: `wiener`:`peter`.  
+
+> Hint: To access another user's account, you will need to exploit a quirk in how PHP compares data of different types. 
+
+
+### Solution
+Trước tiên, thử đăng nhập bằng credential `wiener` và phân tích `session` cookie.  
+
+![image](https://user-images.githubusercontent.com/44528004/137728772-872531fb-cc65-4f4e-a0bb-2f32b4484b9d.png)
+> `session` cookie:  
+> ```
+> O:4:"User":2:{s:8:"username";s:6:"wiener";s:12:"access_token";s:32:"mp4rrxvd0wyp0d029oijd922uh59ysnf";}
+> ```
+
+Ta thấy rằng object này được tạo từ class `User` với `username=wiener` và `access_token=mp4rrxvd0wyp0d029oijd922uh59ysnf`.  
+Vậy để login vào `administrator`, ta cần đổi `wiener` thành `administrator`. Từ đó, ta có:
+```
+O:4:"User":2:{s:8:"username";s:13:"administrator";s:12:"access_token";s:32:"mp4rrxvd0wyp0d029oijd922uh59ysnf";}
+```
+
+Nếu ta giữ nguyên `access_token` và decode chuỗi trên ở dạng base64 và thực hiện GET request với `session` cookie mới, ta sẽ nhận được lỗi sau:  
+
+![image](https://user-images.githubusercontent.com/44528004/137730592-5ad62d80-3905-4848-b98d-3bf0a17df605.png)
+
+Nhìn vào hint, ta thấy được rằng, còn một lỗ hổng khác mà ta có thể khai thác đó chính là các phép so sánh trong PHP. Cụ thể hơn, khi so sánh bằng với `==`, PHP interpreter sẽ tự động convert data type một cách tốt nhất có thể và thực hiện so sánh 2 *giá trị*. Khi so sánh với `===`, PHP interpreter sẽ không tự động convert data type, nghĩa là `a === b` chỉ đúng khi và chỉ khi `a` và `b` có cùng kiểu dữ liệu và có cùng giá trị.  
+
+Trong lab này, ta thấy là `access_token` được lưu ở dạng chuỗi, nếu chuỗi này so sánh với một con số thì nó sẽ được convert sang số một cách tốt nhất có thể, nếu không được nó sẽ trả về `0`. Vậy ta thử thay `access_token` thành kiểu integer với giá trị bằng `0` trên serialized string.
+```
+O:4:"User":2:{s:8:"username";s:13:"administration";s:12:"access_token";i:0;}
+```
+
+Thực hiện encode base64 và gửi GET request tới `/`.  
+
+![image](https://user-images.githubusercontent.com/44528004/137731626-4dba98f4-25f8-4e59-9230-adaaaf702fe4.png)
+> Xuất hiện `Admin panel`, vì vậy ta đã thành công.  
+
+Mở Admin panel và xóa `Carlos` user.  
+
+![image](https://user-images.githubusercontent.com/44528004/137731754-cdc1f413-c570-4d30-b7bf-53a7858e483f.png)  
+
+![image](https://user-images.githubusercontent.com/44528004/137731836-ab130240-b540-46fc-8e62-b556f78eb0db.png)
+> Solved!
+
+
+
+
+
 
 ## Câu 10
 > Đã làm tại lớp  
