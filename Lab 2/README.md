@@ -89,6 +89,40 @@ Fortify SCA phát hiện lỗ hổng bằng cách đọc mã nguồn, biên dị
 > Đã làm tại lớp  
 
 ## Câu 7
+Khi thực hiện serialization, các object sẽ được convert sang một định dạng nào đó mà khi deserialize, trạng thái của chúng không thay đổi.  
+Trong PHP, object khi được serialized sẽ được lưu dưới dạng string. Ví dụ:
+```
+O:4:"User":2:{s:4:"name";s:5:"thinh";s:10:"isLoggedIn";b:1;}
+```
+> với `0:4` ở phần đầu biểu hiện serialized data này là một object `0` với tên có `4` ký tự).  
+
+Trong Java, object khi được serialized sẽ được lưu dưới dạng byte và cũng lưu theo một định dạng nhất định. Cụ thể, các class kế thừa từ `java.io.Serializable` đều có thể được serialize và định dạng sau khi serialize sẽ bắt đầu bằng `ac ed 00 05` ở dạng hexa.  
+```
+└─$ cat normalObj.serial | hexdump
+0000000 edac 0500 7273 0700 7556 6e6c 624f 1c6a
+0000010 3ae9 a207 a218 024e 0100 004c 6303 646d
+0000020 0074 4c12 616a 6176 6c2f 6e61 2f67 7453
+0000030 6972 676e 783b 7470 0300 7770 0064     
+000003d
+```
+> Ở little endian, các byte này sẽ được biểu diễn là `edac 0500`.  
+
+Nếu ta decode các byte này theo đúng thứ tự `ac ed 00 05`, ta sẽ có chuỗi bit sau:
+```
+10101100111011010000000000000101
+```
+
+Chuỗi bit này sẽ tương ứng với các ký tự sau khi biểu diễn ở base64:
+```
+101011 - r
+001110 - O
+110100 - 0
+000000 - A
+000001 - B
+01
+```
+
+Vậy bất kỳ khi nào ta thấy một chuỗi base64 bắt đầu với `rO0AB` ta có thể nghĩ ngay đến việc chuỗi này là một chuỗi serialize của một object nào đó trong Java. Tự đó ta có thể khai thác từ điểm này nếu chương trình không kiểm soát chặt chẽ việc serialize và deserialize.
 
 ## Câu 8
 
