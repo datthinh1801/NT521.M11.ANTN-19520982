@@ -125,6 +125,39 @@ Chuỗi bit này sẽ tương ứng với các ký tự sau khi biểu diễn �
 Vậy bất kỳ khi nào ta thấy một chuỗi base64 bắt đầu với `rO0AB` ta có thể nghĩ ngay đến việc chuỗi này là một chuỗi serialize của một object nào đó trong Java. Tự đó ta có thể khai thác từ điểm này nếu chương trình không kiểm soát chặt chẽ việc serialize và deserialize.
 
 ## Câu 8
+### Description
+This lab uses a serialization-based session mechanism and is vulnerable to privilege escalation as a result. To solve the lab, edit the serialized object in the session cookie to exploit this vulnerability and gain administrative privileges. Then, delete Carlos's account.
+
+You can log in to your own account using the following credentials: `wiener`:`peter`  
+
+### Solution
+Từ lab description, ta biết được là ứng dụng web này sử dụng cơ chế serialization để tạo session cookie. Để xác minh, ta có thể dùng Burp Suite để inspect các tương tác giữa client và server:  
+
+![image](https://user-images.githubusercontent.com/44528004/137713138-7779bea7-1b98-4d42-9caa-464e2c5360d8.png)  
+
+Xem POST request:  
+![image](https://user-images.githubusercontent.com/44528004/137713421-efa79234-fbbd-406e-9ea9-87a87411e98d.png)  
+
+Ở đây, ta thấy được là server set cookie `session` cho client với giá trị là `Tzo0OiJVc2VyIjoyOntzOjg6InVzZXJuYW1lIjtzOjY6IndpZW5lciI7czo1OiJhZG1pbiI7YjowO30%3d`. Khi decode URL và base64, ta sẽ có kết quả sau:  
+![image](https://user-images.githubusercontent.com/44528004/137713625-b3c5d7d3-b3ee-41cb-ad79-2116e37a2e55.png)  
+
+Từ kết quả decode, ta thấy được rằng, `session` cookie này được tạo từ một `User` object với `username` là `wiener` và `admin=false`.  
+
+Vậy để leo thang đặc quyền (privilege escalation), ta có thể set `admin=true` bằng cách thay `b:0` thành `b:1` và thực hiện decode base64 để tái tạo `session` cookie.  
+
+![image](https://user-images.githubusercontent.com/44528004/137713842-d00c9527-842f-42d4-9e4d-aa114566f2a7.png)
+
+Thử GET `/` và thay đổi `session` cookie:  
+![image](https://user-images.githubusercontent.com/44528004/137714086-2215018a-9d7e-4877-acbd-9dc755c03ede.png)
+
+Lúc này, home page của chúng ta có một tab `Admin panel`. Thử truy cập vào `Admin panel` với `session` cookie mới ta được:  
+
+![image](https://user-images.githubusercontent.com/44528004/137714347-5f480cff-75f7-43d4-aa7e-d443da3d9405.png)
+
+Cuối cùng, xóa `carlos` user.  
+
+![image](https://user-images.githubusercontent.com/44528004/137714452-5ecbabf0-93df-41f1-ac52-d0a02cf0eacc.png)
+> Solved!
 
 ## Câu 9
 
