@@ -75,8 +75,9 @@ Fortify SCA phát hiện lỗ hổng bằng cách đọc mã nguồn, biên dị
   - Fortify SCA có khả năng phát hiện lỗ hổng trong source, binary và byte code.  
   - Hỗ trợ phát hiện 815 loại lỗ hổng khác nhau trên 27 ngôn ngữ lập trình và trên hơn 1 triệu APIs.  
   - True positive rate đạt 100% (đánh giá bởi OWASP).  
-- Tự động hóa trong chu trình CI/CD.  
-- Giảm thiểu thời gian và chi phí để phát triển phần mềm an toàn do các lỗ hổng đều được phát hiện sớm trong quá trình phát triển.
+- Hỗ trợ tự động hóa trong chu trình CI/CD.  
+- Giảm thiểu thời gian và chi phí để phát triển phần mềm an toàn do các lỗ hổng đều được phát hiện sớm trong quá trình phát triển.  
+- Có thể Tích hợp vào các IDE và phát hiện lỗ hổng bảo mật trên thời gian thực (phát hiện ngay trong lúc lập trình viên đang code).
 
 
 ## Câu 4
