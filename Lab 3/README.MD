@@ -6,7 +6,7 @@
 Tại sao hàm `malloc(0xf)` lại trả về một kích thước `chunk 0x20 == 32`.
 
 ### Answer
-Theo [trang này](https://web.eecs.utk.edu/~huangj/cs360/360/notes/Malloc1/lecture.html), ta biết được là `malloc()` sẽ cấp vùng nhớ có độ lớn là bội của 8. Vậy `malloc(0xf)` sẽ cấp `0x10` bytes. Bên cạnh đó, theo [trang này](https://www.blackhat.com/presentations/bh-usa-07/Ferguson/Presentation/bh-usa-07-ferguson.pdf), khi một chunk được cấp cho user, sẽ có 16 byte phía trước chunk đó trên heap chứa thông tin metadata cho chunk được cấp. Do đó, `malloc(0xf)` sẽ cấp một vùng nhớ có kích thước `0x20` bytes.  
+Theo [trang này](https://web.eecs.utk.edu/~huangj/cs360/360/notes/Malloc1/lecture.html), ta biết được là `malloc()` sẽ cấp vùng nhớ có độ lớn là bội của 8. Vậy `malloc(0xf)` sẽ cấp `0x10` bytes. Bên cạnh đó, theo [trang này](https://www.blackhat.com/presentations/bh-usa-07/Ferguson/Presentation/bh-usa-07-ferguson.pdf), khi một chunk được cấp cho user, sẽ có 16 byte phía trước chunk đó trên heap chứa thông tin metadata cho chunk được cấp. Do đó, `malloc(0xf)` sẽ cấp một vùng nhớ có kích thước `0x10 + 0x10 = 0x20` bytes.  
 
 ```
     chunk-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
