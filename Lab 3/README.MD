@@ -36,17 +36,17 @@ Tuy nhiên, nếu chương trình có sử dụng nhiều hàm được định 
 - Instruction đầu tiên sẽ nhảy đến GOT entry của hàm đó. Tuy nhiên, GOT entry lúc này chưa có absolute address của hàm mà trỏ ngược lại instruction thứ 2 của PLT entry.
 - Instruction thứ 2 trở đi sẽ thực hiện việc setup các tham số để dynamic linker có thể sử dụng trong quá trình resolve absolute address cho hàm. Sau khi setup, dynamic linker sẽ dược gọi để thực hiện việc resolve.
 - Sau khi resolve, absolute address của hàm sẽ được gán vào GOT entry tương ứng.
-- Cuối cùng, tiến trình sẽ thực thi hàm tại địa chỉ này.
+- Cuối cùng, tiến trình sẽ thực thi hàm tại địa chỉ vừa mới được gán vào GOT entry.
 
 Ở các lần gọi sau:  
-- Ở các lần gọi hàm sau, tiến trình vẫn sẽ nhảy đến PLT entry của hàm đó và thực hiện instruction đầu tiên.
-- Instruction này sẽ nhảy đến GOT entry tương ứng.
-- Do absolute address của hàm đã được resolved và lưu vào GOT entry, tiến trình sẽ nhảy đến absolute address này và thực thi hàm mà không cần phải setup và resolve như lần gọi đầu tiên.
+- Ở các lần gọi hàm sau, tiến trình vẫn sẽ nhảy đến PLT entry của hàm đó để thực hiện instruction đầu tiên và instruction này sẽ nhảy đến GOT entry tương ứng (tương tự như lần đầu tiên gọi hàm).
+- Tuy nhiên ở lần này, absolute address của hàm đã được resolved và lưu vào GOT entry trước đó, nên tiến trình sẽ nhảy đến absolute address này và thực thi hàm mà không cần phải setup và resolve như lần gọi đầu tiên.
 
 Ảnh minh họa:  
 
 ![image](https://user-images.githubusercontent.com/44528004/139620925-4c8ac6f7-dee1-4f60-bbd2-2e29708c41ff.png)
 
+Việc sử dụng PLT và GOT để thực hiện ***lazy binding*** giúp tăng hiệu năng của chương trình vì dynamic linker không cần phải resolve tất cả absolute address tại load time mà thay vào đó, chỉ có các hàm thật sự được sử dụng *ít nhất một lần* mới cần được resolve.
 
 ## Câu 3
 > Đã làm tại lớp.
