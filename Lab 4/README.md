@@ -17,3 +17,18 @@
 | `setproctitle` | Đặt tên cho tiến trình sử dụng format string để tạo chuỗi tên. |
 | `syslog` | Tạo log message để truyền vào system logger. Log message được tạo từ format string. |
 | `err`, `verr`, `warn`, `vwarn` | Hiển thị error message. Error message được tạo từ format string. |
+
+## Câu 2
+### Question
+Dùng GDB để debug và nhập giá trị `%3$x`.
+
+### Answer
+- Khi tiến trình chạy đến bước `printf(s)`, stack sẽ như sau:  
+
+![image](https://user-images.githubusercontent.com/44528004/143236001-c1c91a66-a374-4262-a79d-3b016fdbe6d2.png)
+
+- Kết quả chạy là:  
+
+![image](https://user-images.githubusercontent.com/44528004/143236049-03b9b3a5-e6cc-451b-8740-806a14286986.png)
+
+- Từ đây ta thấy được rằng `3$` sẽ tương ứng với đối số thứ 3 được truyền vào `printf`. Tuy nhiên, do chúng ta không truyền vào đối số nào cả nên tiến trình sẽ lấy giá trị cách đó 12 bytes ở phía trên của stack. Dựa vào stack bên trên, `0xffffd064` có giá trị `0xffffd070` là đối số 1, `0xffffd068` có giá trị `0xf7fc9410` là đối số 2, và `0xffffd06c` có giá trị `0x0804918d` là đối số 3.
