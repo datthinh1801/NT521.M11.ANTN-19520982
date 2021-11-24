@@ -73,3 +73,37 @@ sh.interactive()
 
   ![image](https://user-images.githubusercontent.com/44528004/143276331-27f89422-1423-4ca2-b6d8-7edb4caaa0e8.png)
 
+## Câu 4
+Ta có đoạn code sau:
+```c
+#include <stdio.h>
+
+int a = 123, b = 456;
+
+int main() {
+        int c = 789;
+        char s[100];
+        printf("%p\n", &c);
+        scanf("%s", s);
+        printf(s);
+        if (c == 16) {
+                puts("modified c.");
+        }
+        else if (a == 2) {
+                puts("modified a for a small number.");
+        }
+        else if (b == 0x12345678) {
+                puts("modified b for a big number!");
+        }
+        return 0;
+}
+```
+
+- Ở đây, mục đích của ta là ghi đè giá trị của `c` thành 16 thì ta cần truyền vào payload có dạng `[overwriten_addr][padding]%[offset]$n`. Cụ thể hơn, payload để khai thác chương trình này sẽ là `addr_c%012d%6$n`.
+    - `addr_c` là địa chỉ của biến `c`.
+    - `%012d` sẽ khiến đọc 4 bytes tiếp theo trên stack và thêm padding để tạo thành 12 bytes.
+    - `%6$n` sẽ đếm tổng số bytes đã đọc được ở thời điểm hiện tại và lưu vào đối số thứ 6. Với đối số thứ 6 này địa chỉ bắt đầu của buffer và đang trỏ tới địa chỉ của biến `c`. Do đó, tổng số bytes đã được đọc bởi format function là 16 sẽ được lưu vào địa chỉ của biến `c` và `c` sẽ bằng 16.
+
+- Kết quả exploit:  
+
+![image](https://user-images.githubusercontent.com/44528004/143288425-b2124f91-79e4-4085-b91d-59aa97a8f282.png)
