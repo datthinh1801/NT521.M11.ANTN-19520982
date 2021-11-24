@@ -102,7 +102,7 @@ int main() {
 - Ở đây, mục đích của ta là ghi đè giá trị của `c` thành 16 thì ta cần truyền vào payload có dạng `[overwriten_addr][padding]%[offset]$n`. Cụ thể hơn, payload để khai thác chương trình này sẽ là `addr_c%012d%6$n`.
     - `addr_c` là địa chỉ của biến `c`.
     - `%012d` sẽ khiến đọc 4 bytes tiếp theo trên stack và thêm padding để tạo thành 12 bytes.
-    - `%6$n` sẽ đếm tổng số bytes đã đọc được ở thời điểm hiện tại và lưu vào đối số thứ 6. Với đối số thứ 6 này địa chỉ bắt đầu của buffer và đang trỏ tới địa chỉ của biến `c`. Do đó, tổng số bytes đã được đọc bởi format function là 16 sẽ được lưu vào địa chỉ của biến `c` và `c` sẽ bằng 16.
+    - `%6$n` sẽ đếm tổng số bytes đã đọc được ở thời điểm hiện tại và lưu vào đối số thứ 6. Với đối số thứ 6 này địa chỉ bắt đầu của buffer và đang trỏ tới địa chỉ của biến `c`. Do đó, tổng số bytes đã được đọc bởi `printf` là 16 sẽ được lưu vào địa chỉ của biến `c` và `c` sẽ bằng 16.
 
 - Script exploit:  
 
@@ -134,3 +134,12 @@ for_c()
 ![image](https://user-images.githubusercontent.com/44528004/143288425-b2124f91-79e4-4085-b91d-59aa97a8f282.png)
 
 > Tip: Trong trường hợp địa chỉ muốn ghi đè chứa các byte đặc biệt, ta có thể cân nhắc chuyển địa chỉ ghi đè về cuối payload.
+
+## Câu 5
+- Để ghi đè biến `a` thành `2`, ta cần đặt địa chỉ ghi đè về cuối payload vì địa chỉ chiếm 4 bytes nên `%n` sẽ luôn trả về giá trị >= 4.
+- Script exploit:  
+
+```python
+```
+
+## Câu 6
