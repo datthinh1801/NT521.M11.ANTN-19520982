@@ -42,6 +42,7 @@ Dùng GDB để debug và phân t ích tại sao có địa chỉ của `scanf`.
 
 ### Answer
 - Ban đầu, khi ta truyền vào `AAAA%4$s`, chương trình bị treo vì khi hàm `printf('AAAA%4$s')` được thực thi, chương trình sẽ cố gắng truy xuất vào vùng nhớ `0x41414141` nhằm đọc các ký tự từ địa chỉ này để in ra màn hình. Tuy nhiên, `0x41414141` là vùng nhớ không thể truy xuất được nên chương trình bị treo.
+> Specifier `%s` mong đợi đối số truyền vào là địa chỉ bắt đầu của chuỗi ký tự nên `printf` sẽ truy xuất đến vùng địa chỉ này để lấy giá trị.
 - Trong trường hợp 4 bytes đầu của payload là địa chỉ của `__isoc99_scanf_got`, vì GOT nằm ở data segment mà data segment thì chương trình có thể truy xuất được nên sẽ không xảy ra lỗi. Bên cạnh đó, entry của `scanf` trên GOT trỏ tới địa chỉ thực của `scanf` trên libc nên ta thành công trong việc truy xuất vào địa chỉ thực của `scanf` trên libc.
 - Script:  
 ```python
