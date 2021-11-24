@@ -107,3 +107,5 @@ int main() {
 - Kết quả exploit:  
 
 ![image](https://user-images.githubusercontent.com/44528004/143288425-b2124f91-79e4-4085-b91d-59aa97a8f282.png)
+
+> Tip: Trong trường hợp địa chỉ muốn ghi đè chứa các byte đặc biệt, ta có thể cân nhắc chuyển địa chỉ ghi đè về cuối payload.
