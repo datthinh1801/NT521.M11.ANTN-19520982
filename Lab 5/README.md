@@ -213,3 +213,6 @@ Khi xem assembly code, ta thấy được rằng, `message` nằm tại `rbp - 0
 Từ đó, ta tính được là `message` cách canary `0x60 - 0x8 = 0x58 = 88 bytes`. Bên cạnh đó, ta biết được rằng `message` là đối số thứ 8 đối với format string, vậy canary sẽ là đối số thứ `8 + 88/8 = 8 + 11 = 19` so với format string.  
 
 Vậy, `%19$lx` sẽ leak được địa chỉ của canary tại runtime.
+
+#### Tìm địa chỉ trả về
+Sau khi có được giá trị của canary tại runtime để đảm bảo bypass được stack smashing protection, ta cần tính địa của hàm mà ta muốn trả về.
