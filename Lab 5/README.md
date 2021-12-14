@@ -321,3 +321,7 @@ with open('payload.in', 'wb') as f:
 p.sendline(payload)
 p.interactive()
 ```
+
+### Kết quả
+![image](https://user-images.githubusercontent.com/44528004/146056548-8b132693-21c0-400e-86f4-24a45c4625ad.png)
+> Đã lấy được shell.
