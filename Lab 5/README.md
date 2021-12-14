@@ -190,3 +190,26 @@ Mình thử thay `len = 0x80000001`, thì chương trình trở nên ổn địn
 ![image](https://user-images.githubusercontent.com/44528004/145933150-cf7b6f85-89e4-49bf-b48a-a38e25ed0ebe.png)
 
 Vậy `len` của ta sẽ sử dụng là `0x80000001`.
+
+#### Format string
+Ta sẽ khai thác lỗ hổng format string để leak địa chỉ của `message`.  
+
+Từ hình bên dưới, ta thấy được rằng `message` sẽ là đối số thứ 8 trong format string.
+
+![image](https://user-images.githubusercontent.com/44528004/146035768-82b3e00f-c110-4cec-97ee-55de68cea0eb.png)
+
+
+#### Leak canary
+Vì chương trình này được bảo vệ bởi canary để chống buffer overflow, ta sẽ cần leak giá trị của canary. Mục đích của việc leak giá trị của canary là để ta lưu giá trị vào 1 vị trí nào đó trong `message`, khi `message` bị overflow, vị trí của canary trong `message` sẽ tương ứng với vị trí của canary trên stack. Và do đó, sau khi overflow, canary trên stack vẫn không bị thay đổi.  
+
+Khi xem assembly code, ta thấy được rằng, `message` nằm tại `rbp - 0x60` và canary nằm tại `rbp - 0x8`.  
+
+![image](https://user-images.githubusercontent.com/44528004/146034358-8003fa63-b4e1-49f7-95d6-4d28ac749564.png)
+> Phía trên là đoạn code của `printf(message);`.  
+
+![image](https://user-images.githubusercontent.com/44528004/146034511-373c3a6e-8850-4d18-b84c-f922ce14b66a.png)
+> Phía trên là đoạn code kiểm tra canary.  
+
+Từ đó, ta tính được là `message` cách canary `0x60 - 0x8 = 0x58 = 88 bytes`. Bên cạnh đó, ta biết được rằng `message` là đối số thứ 8 đối với format string, vậy canary sẽ là đối số thứ `8 + 88/8 = 8 + 11 = 19` so với format string.  
+
+Vậy, `%19$lx` sẽ leak được địa chỉ của canary tại runtime.
