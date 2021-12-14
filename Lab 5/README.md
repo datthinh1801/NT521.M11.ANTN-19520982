@@ -222,4 +222,17 @@ Sau khi có được giá trị của canary tại runtime để đảm bảo by
 ![image](https://user-images.githubusercontent.com/44528004/146052827-f2f54fe4-4940-4355-827e-b7289e665d48.png)
 
 
+Nếu ta lấy địa chỉ của `__libc_start_main+234` trừ cho `234` ta sẽ có địa chỉ nền của `__libc_start_main`. Nếu ta biết được relative address của `__libc_start_main`, ta sẽ tính được địa chỉ nền của `libc`. Vậy để biết được relative address của `__libc_start_main`, ta có thể `gdb /usr/lib/x86_64-linux-gnu/libc-2.32.so` và disassembly `__libc_start_main` để xem relative address.
+> Để biết được đường dẫn của thư viện `libc`, ta có thể dùng `vmmap` trong `gef`.  
+> ![image](https://user-images.githubusercontent.com/44528004/146054408-3ea416b2-7f45-428a-a33a-6b901647daa9.png)
 
+
+![image](https://user-images.githubusercontent.com/44528004/146054094-e359d53a-0385-4305-afec-ba92c632d9a4.png)
+
+Một cách khác là ta dùng `pwntools`.
+```python
+from pwn import *
+
+e_libc = ELF('/usr/lib/x86_64-linux-gnu/libc-2.32.so')
+print(e_libc.symbols['__libc_start_main'])
+```
