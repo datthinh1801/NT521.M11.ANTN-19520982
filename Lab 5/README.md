@@ -173,8 +173,20 @@ RelRO                         : Full
 ```
 
 ### Exploit
+#### Integer overflow
 Mở ghidra để xem pseudocode của hàm `vuln`.  
 
 ![image](https://user-images.githubusercontent.com/44528004/145931692-b94b7ab9-db0a-46d3-b79f-1e626942c81b.png)  
 
 Ở đây, ta thấy rằng, `len` là được khai báo là `uint`, nhưng `len` được so sánh với `0x50` thì `len` được convert sang `int`. Sau đó, nếu `int(len) < 0x50`, ta sẽ được ghi giá trị vào message nhưng với `len` lúc này là `ulong`. Điều này cho thấy, nếu ta truyền `len` là một số `>= 0x80000000` thì `int(len)` sẽ luôn nhỏ hơn `0x50` vì từ 1 số không dấu `0x80000000` được convert sang 1 số có dấu thì sẽ trở thành số âm. Và số âm thì luôn `< 0x50` nên sẽ luôn thoả điều kiện. Bên cạnh đó, khi hàm `read` được thực thi, `len` lại được dùng như là 1 số không dấu nên lúc này độ dài message mà ta có thể ghi là rất lớn.
+
+Vậy, với `len` ban đầu được khai báo là `uint`, `len` sẽ có độ dài là 4 bytes. Khi mình nhập `len = 0xffffffff`, thì chương trình chạy không ổn định vì có lúc mình bypass thành công, có lúc thì không.  
+
+![image](https://user-images.githubusercontent.com/44528004/145933110-7e7da548-3d73-4a6c-aa50-c3f29e12205d.png)
+
+
+Mình thử thay `len = 0x80000001`, thì chương trình trở nên ổn định hơn. Với `len = 0x80000001`, độ dài message mà ta có thể ghi được là `0x7fffffff` (xấp xỉ 2 GBs).  
+
+![image](https://user-images.githubusercontent.com/44528004/145933150-cf7b6f85-89e4-49bf-b48a-a38e25ed0ebe.png)
+
+Vậy `len` của ta sẽ sử dụng là `0x80000001`.
