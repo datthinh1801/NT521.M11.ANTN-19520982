@@ -114,3 +114,67 @@ with open('payload.in', 'wb') as f:
 p.sendline(payload)
 p.interactive()
 ```
+
+## Challenge 2
+### Description
+Source code:
+```c
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+void win() {
+        char name[0x40];
+        char shell[16] = "/bin/sh\x00";
+        if (strncmp(name, "Nghi Hoang Khoa dep trai", 24) == 0) {
+                puts("Chuc mung ban da khong bi diem liet");
+                system(shell);
+        }
+}
+
+void vuln() {
+        int len = 0, f = 0;
+        char message[0x50];
+        printf("Nhap do dai tin nhan: ");
+        scanf("%d", &len);
+        if (len < 0x50) {
+                read(0, message, len);
+                printf(message);
+                puts("Ban co muon sua lai tin nhan khong?");
+                puts("1. Co");
+                puts("2. Khong");
+                scanf("%d", &f);
+                if (f == 1) {
+                        read(0, message, len);
+                }
+        }
+}
+
+int main() {
+        setbuf(stdin, 0);
+        setbuf(stdout, 0);
+        vuln();
+        return 0;
+}
+```
+
+### Observation
+Từ source code, ta thấy rằng, chương trình sẽ yêu cầu ta nhập độ dài của tin nhắn và lưu vào `len`. Nếu `len < 0x50`, ta sẽ nhập message và sau đó ta có thêm 1 lần sửa lại message.  
+
+Tuy nhiên, ở lần đọc `message` đầu tiên, `message` sẽ được in ra màn hình bằng hàm `printf`. Do đó, ta có thể khai thác hàm `printf` này để leak địa chỉ và giá trị trên stack.  
+
+Bên cạnh đó, thông qua `checksec`, ta thấy được là chương trình này được bật đầy đủ chế độ bảo vệ.  
+```
+Canary                        : ✓ 
+NX                            : ✓ 
+PIE                           : ✓ 
+Fortify                       : ✘ 
+RelRO                         : Full
+```
+
+### Exploit
+Mở ghidra để xem pseudocode của hàm `vuln`.  
+
+![image](https://user-images.githubusercontent.com/44528004/145931692-b94b7ab9-db0a-46d3-b79f-1e626942c81b.png)  
+
+Ở đây, ta thấy rằng, `len` là được khai báo là `uint`, nhưng `len` được so sánh với `0x50` thì `len` được convert sang `int`. Sau đó, nếu `int(len) < 0x50`, ta sẽ được ghi giá trị vào message nhưng với `len` lúc này là `ulong`. Điều này cho thấy, nếu ta truyền `len` là một số `>= 0x80000000` thì `int(len)` sẽ luôn nhỏ hơn `0x50` vì từ 1 số không dấu `0x80000000` được convert sang 1 số có dấu thì sẽ trở thành số âm. Và số âm thì luôn `< 0x50` nên sẽ luôn thoả điều kiện. Bên cạnh đó, khi hàm `read` được thực thi, `len` lại được dùng như là 1 số không dấu nên lúc này độ dài message mà ta có thể ghi là rất lớn.
