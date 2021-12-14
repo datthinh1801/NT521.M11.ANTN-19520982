@@ -215,4 +215,11 @@ Từ đó, ta tính được là `message` cách canary `0x60 - 0x8 = 0x58 = 88 
 Vậy, `%19$lx` sẽ leak được địa chỉ của canary tại runtime.
 
 #### Tìm địa chỉ trả về
-Sau khi có được giá trị của canary tại runtime để đảm bảo bypass được stack smashing protection, ta cần tính địa của hàm mà ta muốn trả về.
+Sau khi có được giá trị của canary tại runtime để đảm bảo bypass được stack smashing protection, ta cần tính địa của hàm mà ta muốn trả về. Ban đầu, mình nghĩ là sẽ return về hàm `win`, tuy nhiên để gọi được `system` trong hàm `win` thì chuỗi `name` phải bằng `Nghi Hoang Khoa dep trai`. Mà `name` nằm trên stack và stack sẽ thường xuyên thay đôi khi chương trình đang chạy nên việc tìm được địa chỉ của `name` khá khó khăn. Vì vậy, mình thử hướng khác là **ret2libc**.
+
+Đầu tiên, khi đặt break point ngay tại câu lệnh `ret` của hàm `vuln`, ta thấy được rằng câu lệnh tại `__libc_start_main+234` nằm ở `rsp + 0x10`, tương đương `rbp + 0x18` (`rbp` của hàm `vuln`. Mà canary nằm tại `rbp - 0x8` là đối số thứ 19 của foramt string, nên `__libc_start_main+234` nằm tại `rbp + 0x18` sẽ là đối số thứ 23 của format string. Vậy `%19$lx.%23$lx` sẽ giúp ta leak được canary và địa chỉ của câu lệnh tại `__libc_start_main+234`.  
+
+![image](https://user-images.githubusercontent.com/44528004/146052827-f2f54fe4-4940-4355-827e-b7289e665d48.png)
+
+
+
