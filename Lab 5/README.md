@@ -15,7 +15,7 @@ int main() {
 }
 ```
 
-Để gọi được shell từ chương trình này, ta có thể truyền shellcode vào `buffer`, sau đó ghi đè `return address` của hàm main bằng địa chỉ bắt đầu của buffer. Lúc này, ghi hàm `main` kết thúc, tiến trình sẽ nhảy đến `buffer` và thực thi shellcode.  
+Để gọi được shell từ chương trình này, ta có thể truyền shellcode vào `buffer`, sau đó ghi đè `return address` của hàm main bằng địa chỉ bắt đầu của buffer. Lúc này, khi hàm `main` kết thúc, tiến trình sẽ nhảy đến `buffer` và thực thi shellcode.  
 
 ### Exploit
 #### Tính offset
